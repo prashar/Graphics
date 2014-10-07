@@ -17,7 +17,8 @@
 
 // Include individual brush headers here.
 #include "pointBrush.h"
-
+#include "triangleBrush.h"
+#include "SingleLineBrush.h"
 
 #define DESTROY(p)	{  if ((p)!=NULL) {delete [] p; p=NULL; } }
 
@@ -40,7 +41,7 @@ ImpressionistDoc::ImpressionistDoc()
 
 	// Note: You should implement these 5 brushes.  They are set the same (PointBrush) for now
 	ImpBrush::c_pBrushes[BRUSH_LINES]				
-		= new PointBrush( this, "Lines" );
+		= new SingleLineBrush( this, "Lines" );
 	ImpBrush::c_pBrushes[BRUSH_CIRCLES]				
 		= new PointBrush( this, "Circles" );
 	ImpBrush::c_pBrushes[BRUSH_SCATTERED_POINTS]	
@@ -49,7 +50,8 @@ ImpressionistDoc::ImpressionistDoc()
 		= new PointBrush( this, "Scattered Lines" );
 	ImpBrush::c_pBrushes[BRUSH_SCATTERED_CIRCLES]	
 		= new PointBrush( this, "Scattered Circles" );
-
+	ImpBrush::c_pBrushes[BRUSH_TRIANGLE]
+		= new TriangleBrush(this, "Triangle Brush");
 	// make one of the brushes current
 	m_pCurrentBrush	= ImpBrush::c_pBrushes[0];
 
@@ -73,6 +75,16 @@ char* ImpressionistDoc::getImageName()
 }
 
 //---------------------------------------------------------
+// Called by the UI when the user changes the 
+// stroke direction type.
+// type: one of the defined stroke direction types.
+//---------------------------------------------------------
+void ImpressionistDoc::setStrokeDirection(int type)
+{
+	m_pUI->setStrokeDirection(type);
+}
+
+//---------------------------------------------------------
 // Called by the UI when the user changes the brush type.
 // type: one of the defined brush types.
 //---------------------------------------------------------
@@ -80,6 +92,40 @@ void ImpressionistDoc::setBrushType(int type)
 {
 	m_pCurrentBrush	= ImpBrush::c_pBrushes[type];
 }
+
+//---------------------------------------------------------
+// Return Line Size
+//---------------------------------------------------------
+int ImpressionistDoc::getLineSize()
+{
+	return m_pUI->getLineSize();
+}
+
+//---------------------------------------------------------
+// Return Line Angle
+//---------------------------------------------------------
+int ImpressionistDoc::getLineAngle()
+{
+	return m_pUI->getLineAngle();
+}
+
+
+//---------------------------------------------------------
+// Return Stroke Direction
+//---------------------------------------------------------
+int ImpressionistDoc::getStrokeDirection()
+{
+	return m_pUI->getStrokeDirection();
+}
+
+//---------------------------------------------------------
+// Return Alpha
+//---------------------------------------------------------
+GLfloat ImpressionistDoc::getAlpha()
+{
+	return m_pUI->getAlpha();
+}
+
 
 //---------------------------------------------------------
 // Returns the size of the brush.

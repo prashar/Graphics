@@ -48,8 +48,12 @@ public:
 // for brush dialog
 	Fl_Window*			m_brushDialog;
 	Fl_Choice*			m_BrushTypeChoice;
+	Fl_Choice*			m_StrokeDirectionChoice;
 
 	Fl_Slider*			m_BrushSizeSlider;
+	Fl_Slider*			m_LineSizeSlider;
+	Fl_Slider*			m_LineAngleSlider;
+	Fl_Slider*			m_AlphaSlider;
 	Fl_Button*          m_ClearCanvasButton;
 
 	// Member functions
@@ -64,6 +68,14 @@ public:
 	int					getSize();
 	void				setSize(int size);
 
+	// Adding function definitions for getting line size, angle, stroke direction
+	int					getLineSize(); 
+	int					getLineAngle(); 
+	int					getStrokeDirection();
+	void				setStrokeDirection(int type); 
+
+	GLfloat				getAlpha(); 
+
 	// Callbacks for the image filter dialogue (different from
 	// the other callbacks because they aren't static)
 	void				initFltDesignUI(void);
@@ -77,8 +89,24 @@ public:
 private:
 	ImpressionistDoc*	m_pDoc;		// pointer to document to communicate with the document
 
-	// All attributes here
-	int		m_nSize;
+	//
+	// Brush Size attribute
+	//
+	int        m_nSize;
+
+	//
+	// Line Size attribute
+	//
+	int         m_lSize;
+	int			m_lAngle;  
+
+	// Alpha Attribute
+	GLfloat		m_nAlpha;
+
+	// Map stroke direction
+	int m_lStrokeDirection;
+
+
 
 	// These attributes are set by the filter kernel UI
 	double fltKernel[FLT_WIDTH*FLT_HEIGHT];		//the kernel of the image filter
@@ -90,6 +118,8 @@ private:
 	// Static class members
 	static Fl_Menu_Item		menuitems[];
 	static Fl_Menu_Item		brushTypeMenu[NUM_BRUSH_TYPE+1];
+	static Fl_Menu_Item     strokeDirectionMenu[NUM_STROKE_DIRECTIONS + 1];
+
 
 	static ImpressionistUI*	whoami(Fl_Menu_* o);
 
@@ -108,6 +138,12 @@ private:
 	static void	cb_brushChoice(Fl_Widget* o, void* v);
 	static void	cb_clear_canvas_button(Fl_Widget* o, void* v);
 	static void	cb_sizeSlides(Fl_Widget* o, void* v);
+	static void	cb_lineSizeSlides(Fl_Widget* o, void* v);
+	static void	cb_lineAngleSlides(Fl_Widget* o, void* v);
+	static void	cb_strokeDirection(Fl_Widget* o, void* v);
+	static void cb_alphaSlides(Fl_Widget* o, void* v);
+
+
 
 };
 

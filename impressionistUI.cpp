@@ -370,9 +370,69 @@ void ImpressionistUI::cb_brushChoice(Fl_Widget* o, void* v)
 
 	int type=(int)v;
 
+	switch (type)
+	{
+		case (BRUSH_LINES || BRUSH_SCATTERED_LINES):
+			pUI->m_LineSizeSlider->activate();
+			pUI->m_LineAngleSlider->activate(); 
+			pUI->m_StrokeDirectionChoice->activate(); 
+			break;
+		case BRUSH_SCATTERED_LINES:
+			pUI->m_LineSizeSlider->activate();
+			pUI->m_LineAngleSlider->activate();
+			pUI->m_StrokeDirectionChoice->activate();
+			break;
+		default:
+			pUI->m_LineSizeSlider->deactivate();
+			pUI->m_LineAngleSlider->deactivate();
+			pUI->m_StrokeDirectionChoice->deactivate();
+	}
 
 	pDoc->setBrushType(type);
 }
+
+//-------------------------------------------------------------
+// We need to know which direction to make the strokes in
+// UI says the followign stroke direction is needed
+//-------------------------------------------------------------
+void ImpressionistUI::cb_strokeDirection(Fl_Widget* o, void* v)
+{
+	ImpressionistUI* pUI = ((ImpressionistUI *)(o->user_data()));
+	ImpressionistDoc* pDoc = pUI->getDocument(); 
+	int type = (int)v; 
+	pDoc->setStrokeDirection(type);
+}
+
+//-------------------------------------------------------------
+// We need to know which direction to make the strokes in
+// UI says the followign stroke direction is needed
+//-------------------------------------------------------------
+void ImpressionistUI::cb_lineSizeSlides(Fl_Widget* o, void* v)
+{
+	ImpressionistUI* pUI = ((ImpressionistUI *)(o->user_data()));
+	pUI->m_lSize = int(((Fl_Slider *)o)->value());
+}
+
+//-------------------------------------------------------------
+// We need to know which direction to make the strokes in
+// UI says the followign stroke direction is needed
+//-------------------------------------------------------------
+void ImpressionistUI::cb_lineAngleSlides(Fl_Widget* o, void* v)
+{
+	ImpressionistUI* pUI = ((ImpressionistUI *)(o->user_data()));
+	pUI->m_lAngle = int(((Fl_Slider *)o)->value());
+}
+
+//-------------------------------------------------------------
+// We need to know which direction to make the strokes in
+// UI says the followign stroke direction is needed
+//-------------------------------------------------------------
+void ImpressionistUI::cb_alphaSlides(Fl_Widget* o, void* v)
+{
+	ImpressionistUI* pUI = ((ImpressionistUI *)(o->user_data()));
+	pUI->m_nAlpha = GLfloat(((Fl_Slider *)o)->value());
+}
+
 
 //------------------------------------------------------------
 // Clears the paintview canvas.
@@ -444,6 +504,14 @@ int ImpressionistUI::getSize()
 	return m_nSize;
 }
 
+//------------------------------------------------
+// Get the alpha value
+//------------------------------------------------
+GLfloat ImpressionistUI::getAlpha ()
+{
+	return m_nAlpha;
+}
+
 //-------------------------------------------------
 // Set the brush size
 //-------------------------------------------------
@@ -453,6 +521,29 @@ void ImpressionistUI::setSize( int size )
 
 	if (size<=40) 
 		m_BrushSizeSlider->value(m_nSize);
+}
+
+// ------------------------------------------------------------------------
+// ----- Getter/Setters for line brush size, angle, and stroke direction //
+//-------------------------------------------------------------------------
+int ImpressionistUI::getLineSize()
+{
+	return m_lSize; 
+}
+
+int ImpressionistUI::getLineAngle()
+{
+	return m_lAngle;
+}
+
+int ImpressionistUI::getStrokeDirection()
+{
+	return m_lStrokeDirection;
+}
+
+void ImpressionistUI::setStrokeDirection(int type)
+{
+	m_lStrokeDirection = type; 
 }
 
 // Getting/setting methods for the filter design UI
@@ -552,7 +643,14 @@ Fl_Menu_Item ImpressionistUI::brushTypeMenu[NUM_BRUSH_TYPE+1] = {
   {"Scattered Points",	FL_ALT+'q', (Fl_Callback *)ImpressionistUI::cb_brushChoice, (void *)BRUSH_SCATTERED_POINTS},
   {"Scattered Lines",	FL_ALT+'m', (Fl_Callback *)ImpressionistUI::cb_brushChoice, (void *)BRUSH_SCATTERED_LINES},
   {"Scattered Circles",	FL_ALT+'d', (Fl_Callback *)ImpressionistUI::cb_brushChoice, (void *)BRUSH_SCATTERED_CIRCLES},
+  {"Triangles", FL_ALT + 't', (Fl_Callback *)ImpressionistUI::cb_brushChoice, (void *)BRUSH_TRIANGLE },
   {0}
+};
+
+Fl_Menu_Item ImpressionistUI::strokeDirectionMenu[NUM_STROKE_DIRECTIONS + 1] = {
+		{"Slider", FL_ALT + 's', (Fl_Callback *)ImpressionistUI::cb_strokeDirection, (void *)STROKE_DIRECTION_SLIDER},
+		{ "Gradient", FL_ALT + 'g', (Fl_Callback *)ImpressionistUI::cb_strokeDirection, (void *)STROKE_DIRECTION_GRADIENT },
+		{ 0 }
 };
 
 
@@ -604,6 +702,9 @@ ImpressionistUI::ImpressionistUI() : m_nativeChooser(NULL) {
 	// init values
 
 	m_nSize = 10;
+	m_lSize = 1;
+	m_lAngle = 0;
+	m_nAlpha = 1.0;
 
 	// brush dialog definition
 	m_brushDialog = new Fl_Window(400, 325, "Brush Dialog");
@@ -630,6 +731,55 @@ ImpressionistUI::ImpressionistUI() : m_nativeChooser(NULL) {
 		m_BrushSizeSlider->value(m_nSize);
 		m_BrushSizeSlider->align(FL_ALIGN_RIGHT);
 		m_BrushSizeSlider->callback(cb_sizeSlides);
+
+		// Line Width Slider
+		m_LineSizeSlider = new Fl_Value_Slider(10, 100, 300, 20, "Line Width");
+		m_LineSizeSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_LineSizeSlider->deactivate(); 
+		m_LineSizeSlider->type(FL_HOR_NICE_SLIDER);
+		m_LineSizeSlider->labelfont(FL_COURIER);
+		m_LineSizeSlider->labelsize(12);
+		m_LineSizeSlider->minimum(1);
+		m_LineSizeSlider->maximum(40);
+		m_LineSizeSlider->step(1);
+		m_LineSizeSlider->value(m_lSize);
+		m_LineSizeSlider->align(FL_ALIGN_RIGHT);
+		m_LineSizeSlider->callback(cb_lineSizeSlides);
+
+		// Line Angle Slider
+		m_LineAngleSlider = new Fl_Value_Slider(10, 120, 300, 20, "Line Angle");
+		m_LineAngleSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_LineAngleSlider->deactivate();
+		m_LineAngleSlider->type(FL_HOR_NICE_SLIDER);
+		m_LineAngleSlider->labelfont(FL_COURIER);
+		m_LineAngleSlider->labelsize(12);
+		m_LineAngleSlider->minimum(1);
+		m_LineAngleSlider->maximum(360);
+		m_LineAngleSlider->step(1);
+		m_LineAngleSlider->value(m_lAngle);
+		m_LineAngleSlider->align(FL_ALIGN_RIGHT);
+		m_LineAngleSlider->callback(cb_lineAngleSlides);
+
+		// Alpha Slider
+		m_AlphaSlider = new Fl_Value_Slider(10, 140, 300, 20, "Alpha");
+		m_AlphaSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_AlphaSlider->type(FL_HOR_NICE_SLIDER);
+		m_AlphaSlider->labelfont(FL_COURIER);
+		m_AlphaSlider->labelsize(12);
+		m_AlphaSlider->minimum(0);
+		m_AlphaSlider->maximum(1);
+		m_AlphaSlider->step(0.01);
+		m_AlphaSlider->value(m_nAlpha);
+		m_AlphaSlider->align(FL_ALIGN_RIGHT);
+		m_AlphaSlider->callback(cb_alphaSlides);
+
+		// Stroke Direction for Line Brushes
+		m_StrokeDirectionChoice = new Fl_Choice(114, 40, 150, 25, "&Stroke Direction"); 
+		m_StrokeDirectionChoice->user_data((void*)(this)); 
+		m_StrokeDirectionChoice->menu(strokeDirectionMenu);
+		m_StrokeDirectionChoice->callback(cb_strokeDirection);
+		m_StrokeDirectionChoice->deactivate();
+
 
     m_brushDialog->end();	
 
