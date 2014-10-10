@@ -18,9 +18,17 @@ enum
 	BRUSH_SCATTERED_POINTS,
 	BRUSH_SCATTERED_LINES,
 	BRUSH_SCATTERED_CIRCLES,
+	BRUSH_TRIANGLE,
 	NUM_BRUSH_TYPE // Make sure this stays at the end!
 };
 
+// Each stroke direction type has an associated constant
+enum
+{
+	STROKE_DIRECTION_SLIDER = 0,
+	STROKE_DIRECTION_GRADIENT,
+	NUM_STROKE_DIRECTIONS // Make sure this stays at the end!
+};
 
 class ImpressionistDoc; // Pre-declaring class
 
