@@ -43,12 +43,19 @@ char* ImpBrush::BrushName(void)
 void ImpBrush::SetColor (const ImpBrush::Point source)
 {
 	ImpressionistDoc* pDoc = GetDocument();
+	GLfloat alpha = pDoc->getAlpha(); 
 
 
 	GLubyte color[3];
-
 	memcpy ( color, pDoc->GetOriginalPixel( source ), 3 );
  
-	glColor3ubv( color );
+	// Change Alpha Settings
+	GLfloat fRcolor = ((GLfloat)color[0]/255);
+	GLfloat fGcolor = ((GLfloat)color[1]/255);
+	GLfloat fBcolor = ((GLfloat)color[2]/255);
+
+	glEnable(GL_BLEND); 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+	glColor4f( fRcolor, fGcolor, fBcolor, alpha);
 
 }

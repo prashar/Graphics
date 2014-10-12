@@ -26,7 +26,7 @@ void SingleLineBrush::BrushBegin( const ImpBrush::Point source, const ImpBrush::
 	ImpressionistDoc* pDoc = GetDocument();
 	ImpressionistUI* dlg=pDoc->m_pUI;
 
-	int dWidth = pDoc->getSize();
+	int dWidth = pDoc->getLineSize();
 
 	glLineWidth((float)dWidth);
 
@@ -35,29 +35,31 @@ void SingleLineBrush::BrushBegin( const ImpBrush::Point source, const ImpBrush::
 
 void SingleLineBrush::BrushMove( const ImpBrush::Point source, const ImpBrush::Point target )
 {
+	// Get the basic pointers to document and UI.  
 	ImpressionistDoc* pDoc = GetDocument();
 	ImpressionistUI* dlg=pDoc->m_pUI;
+	
+	// These will be line endpoints for targets
+	GLint Ax, Ay, Bx, By;
 
 	if ( pDoc == NULL ) {
 		printf( "SingleLineBrush::BrushMove  document is NULL\n" );
 		return;
 	}
-
+	
+	// Get the size, width, angle, and direction of the stroke
 	int dSize = pDoc->getSize();
 	int dWidth = pDoc->getLineSize(); 
 	int dAngle = pDoc->getLineAngle();  
 	int dDirection = pDoc->getStrokeDirection(); 
 
+	// Overwrite stroke if GRADIENT chosen
 	if (dDirection == STROKE_DIRECTION_GRADIENT)
 	{
-		//dAngle = SobelGradient(source); 
+		dAngle = SobelGradient(source); 
 	}
 
-	GLint Ax, Ay, Bx, By, Qx, Qy ;
-
-	//
 	// Compute Line Points
-	//
 	Ax = target.x - (.5 * dSize); 
 	Bx = target.x + (.5 * dSize);
 	Ay = target.y;
@@ -129,22 +131,24 @@ GLint SingleLineBrush::SobelGradient(const ImpBrush::Point source)
 	srcPoint.x = source.x + 1;
 	srcPoint.y = source.y - 1;
 	memcpy(dColor, pDocument->GetOriginalPixel(srcPoint), 3);
-	a4 = GraphicsUtils::GetLuminosity(dColor);
+	a5 = GraphicsUtils::GetLuminosity(dColor);
 
 	// Calculate a6 above .. 
 	srcPoint.x = source.x - 1;
 	srcPoint.y = source.y - 1;
 	memcpy(dColor, pDocument->GetOriginalPixel(srcPoint), 3);
-	a4 = GraphicsUtils::GetLuminosity(dColor);
+	a6 = GraphicsUtils::GetLuminosity(dColor);
 
 	// Calculate a7 above .. 
 	srcPoint.x = source.x - 1;
 	srcPoint.y = source.y;
 	memcpy(dColor, pDocument->GetOriginalPixel(srcPoint), 3);
-	a4 = GraphicsUtils::GetLuminosity(dColor);
+	a7 = GraphicsUtils::GetLuminosity(dColor);
 
 	/* 
-		Sobel Filter is -  
+		Sobel Filter is -  the following two matrices convolved
+		with the image. fdY & fdX
+
 		[-1		0		 1]
 		[-2		0(x,y)	 2]
 		[-1		0		 1]
@@ -155,13 +159,20 @@ GLint SingleLineBrush::SobelGradient(const ImpBrush::Point source)
 
 		We'll average the gradient at the center pixel
 	*/
+
+	// Multiply with a the matrix above 
 	GLdouble fDx = (a2 + 2 * a3 + a4) - (a0 + 2 * a7 + a6); 
 	GLdouble fDy = (a0 + 2 * a1 + a2) - (a6 + 2 * a5 + a4);
 	fAtan = atan2(fDy, fDx); 
+	
+	// Switch to Radians
 	dAngle = fAtan * (180 / PI); 
+	
+	// Account for negative angles .. 
 	dAngle = (dAngle < 0) ? (360 + dAngle) : dAngle; 
 
-	// Add 90 deg to make perpendicular
+	// We want the line to be drawn 90 degress 
+	// perpendicular to the gradient change. 
 	dAngle = (GLint)(dAngle + 90);
 	dAngle %= 360; 
 
