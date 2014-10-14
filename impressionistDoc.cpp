@@ -19,6 +19,11 @@
 #include "pointBrush.h"
 #include "triangleBrush.h"
 #include "SingleLineBrush.h"
+#include "ScatteredLinesBrush.h"
+#include "ScatteredPointsBrush.h"
+#include "ScatteredCirclesBrush.h"
+#include "RotatingTrianglesBrush.h"
+
 
 #define DESTROY(p)	{  if ((p)!=NULL) {delete [] p; p=NULL; } }
 
@@ -45,13 +50,15 @@ ImpressionistDoc::ImpressionistDoc()
 	ImpBrush::c_pBrushes[BRUSH_CIRCLES]				
 		= new PointBrush( this, "Circles" );
 	ImpBrush::c_pBrushes[BRUSH_SCATTERED_POINTS]	
-		= new PointBrush( this, "Scattered Points" );
+		= new ScatteredPointsBrush( this, "Scattered Points" );
 	ImpBrush::c_pBrushes[BRUSH_SCATTERED_LINES]		
-		= new PointBrush( this, "Scattered Lines" );
+		= new ScatteredLinesBrush( this, "Scattered Lines" );
 	ImpBrush::c_pBrushes[BRUSH_SCATTERED_CIRCLES]	
-		= new PointBrush( this, "Scattered Circles" );
+		= new ScatteredCirclesBrush( this, "Scattered Circles" );
 	ImpBrush::c_pBrushes[BRUSH_TRIANGLE]
 		= new TriangleBrush(this, "Triangle Brush");
+	ImpBrush::c_pBrushes[BRUSH_ROTATING_TRIANGLE]
+		= new RotatingTrianglesBrush(this, "Rotating Triangle");
 	// make one of the brushes current
 	m_pCurrentBrush	= ImpBrush::c_pBrushes[0];
 
@@ -264,6 +271,101 @@ void ImpressionistDoc::applyFilter( const unsigned char* sourceBuffer,
 		double divisor, double offset )
 {
 	// This needs to be implemented for image filtering to work.
+
+	
+	for (int row = 0; row < srcBufferHeight; row++)
+	{
+		for (int col = 0; col < srcBufferWidth; col++)
+		{
+
+			GLint ** rmat = new GLint*[knlHeight];
+			GLint ** gmat = new GLint*[knlHeight];
+			GLint ** bmat = new GLint*[knlHeight];
+
+			GLdouble redsum = 0.0;
+			GLdouble greensum = 0.0;
+			GLdouble bluesum = 0.0;
+
+			for (int i = 0; i < knlHeight; i++)
+			{
+				rmat[i] = new GLint[knlWidth];
+				gmat[i] = new GLint[knlWidth];
+				bmat[i] = new GLint[knlWidth];
+
+			}
+
+			// We want to go (row - 2) because 2,2 is the middle the middle pixel where we're calculating the value. 
+			// 
+			for (GLint y = (row - 2), a = knlHeight - 1; y < (row - 2 + knlHeight); y++, a--)
+			{
+				for (GLint x = (col - 2), b = 0; x < (col - 2 + knlWidth); x++, b++)
+				{
+					// Fixing the edge issues .. 
+					// Just expand the edge pixels to pad for the additional space when convoluting. 
+					GLint x0 = x < 0 ? 0 : x;
+					x0 = x >= srcBufferWidth ? (srcBufferWidth - 1) : x0;
+					GLint y0 = y < 0 ? 0 : y;
+					y0 = y >= srcBufferHeight ? (srcBufferHeight - 1) : y0;
+
+					// Save red, green, and blue channel values for each pixel
+					rmat[a][b] = sourceBuffer[3 * (y0*srcBufferWidth + x0) + 0];
+					gmat[a][b] = sourceBuffer[3 * (y0*srcBufferWidth + x0) + 1];
+					bmat[a][b] = sourceBuffer[3 * (y0*srcBufferWidth + x0) + 2];
+
+				}
+			}
+
+			// Perform the convolution - this is just basically looping over and multiplying numbers for each pixel. 
+			for (int i = 0; i < knlHeight; i++)
+			{
+				for (int j = 0; j < knlWidth; j++)
+				{
+					redsum += rmat[i][j] * filterKernel[i*knlHeight + j];
+					greensum += gmat[i][j] * filterKernel[i*knlHeight + j];
+					bluesum += bmat[i][j] * filterKernel[i*knlHeight + j];
+				}
+			}
+
+			// Take care of division and offset .. 
+			if (divisor > 0)
+			{
+				redsum /= divisor;
+				bluesum /= divisor;
+				greensum /= divisor;
+			}
+			redsum += offset;
+			greensum += offset;
+			bluesum += offset;
+
+			// Take care of color bounds ..
+			redsum = redsum > 255 ? 255 : redsum;
+			greensum = greensum > 255 ? 255 : greensum;
+			bluesum = bluesum > 255 ? 255 : bluesum;
+			redsum = redsum < 0 ? 0 : redsum;
+			greensum = greensum < 0 ? 0 : greensum;
+			bluesum = bluesum < 0 ? 0 : bluesum;
+
+			// Finally write the color in the image
+			destBuffer[3 * (row*srcBufferWidth + col) + 0] = (GLint)redsum;
+			destBuffer[3 * (row*srcBufferWidth + col) + 1] = (GLint)greensum;
+			destBuffer[3 * (row*srcBufferWidth + col) + 2] = (GLint)bluesum;
+
+			// Clear all the unncesseary arrays you 
+			// declared above .. 
+			for (int i = 0; i < knlHeight; ++i)
+			{
+				delete[] rmat[i]; 		
+				delete[] gmat[i];
+				delete[] bmat[i];
+			}
+
+			delete[] rmat;
+			delete gmat;
+			delete bmat;
+
+		}
+
+	}
 
 
 }
